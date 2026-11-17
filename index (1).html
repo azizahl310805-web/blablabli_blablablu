@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registration | Sastra on Stage 2027: OEDIPUS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Karla:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f3f0;--ink:#2a1a20;--wine:#5b1a2b;--gold:#b08a3e;--line:#d8d3ca;--free:#fff;--taken:#cfcac2;--card:#fbfaf8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Karla,system-ui,sans-serif}
+main{max-width:520px;margin:0 auto;padding:32px 18px 64px}
+h1{font:400 2rem/1.15 Marcellus,Georgia,serif;margin:0 0 8px;color:var(--wine)}
+.quote{font-style:italic;color:#6b5a5f;margin:0 0 28px;border-left:3px solid var(--gold);padding-left:12px}
+label{display:block;font-weight:600;margin:18px 0 4px}
+.hint{font-size:.85rem;color:#6b5a5f;margin:0 0 6px;font-weight:400}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;font:inherit;color:inherit}
+input:focus,select:focus,.seat:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.map{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 10px;margin-top:8px}
+.bar{text-align:center;padding:9px;border-radius:8px;margin-bottom:8px;font-size:.9rem}
+.stage{background:var(--wine);color:#fff;letter-spacing:.08em}
+.pubdoc{background:var(--taken);color:#555}
+.map{overflow-x:auto}.map>*{min-width:440px}
+.row{display:grid;grid-template-columns:16px 5fr 14px 10fr 14px 5fr;gap:4px;margin-bottom:5px;align-items:center}
+.blk{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px}
+.rl{font-weight:600;font-size:.8rem;text-align:center}
+.stairs{height:14px;border-radius:50%;background:#8a3a4a}
+.seat{height:28px;padding:0;border:1px solid var(--line);border-radius:5px;background:var(--free);font:inherit;font-size:.68rem;cursor:pointer;color:var(--ink)}
+.seat:hover:not(:disabled){border-color:var(--wine)}
+.seat.sel{background:var(--wine);color:#fff;border-color:var(--wine)}
+.seat:disabled{background:var(--taken);color:#8a847b;cursor:not-allowed;text-decoration:line-through}
+.legend{display:flex;gap:14px;font-size:.85rem;margin-top:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid var(--line);vertical-align:-2px;margin-right:5px}
+.picked{margin:10px 0 0;font-weight:600}
+.msg{margin-top:14px;font-weight:600}.err{color:#a3262f}
+button.go{margin-top:22px;width:100%;padding:13px;border:0;border-radius:6px;background:var(--wine);color:#fff;font:600 1rem Karla,sans-serif;cursor:pointer}
+button.go:disabled{opacity:.6;cursor:wait}
+.done{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Sastra on Stage 2027: OEDIPUS</h1>
+<p class="quote">One final requiem, for the dead<br>Oh fate, sing us your unending tale.</p>
+
+<div id="done" class="done" hidden>
+  <h2 style="font-family:Marcellus,serif;margin-top:0">Registration received</h2>
+  <p>Your seats are reserved: <strong id="doneSeats"></strong>. We will email you at <strong id="doneEmail"></strong> once the committee confirms your registration.</p>
+</div>
+
+<div id="formWrap">
+<div>
+<label for="email">Email</label>
+<input id="email" type="email" autocomplete="email" required>
+
+<label for="name">Full Name</label>
+<p class="hint">If you are registering more than one person, please enter only one name as the representative.</p>
+<input id="name" autocomplete="name" required>
+
+<label for="wa">WhatsApp Number</label>
+<p class="hint">Please make sure this number is active and can be contacted.</p>
+<input id="wa" type="tel" inputmode="tel" autocomplete="tel" required>
+
+<label for="qty">Quantity of Participants</label>
+<select id="qty"><option>1</option><option>2</option><option>3</option><option value="other">Other</option></select>
+<input id="qtyOther" type="number" min="4" max="20" placeholder="Number of participants" hidden style="margin-top:8px">
+
+<label for="cat">Attendee Category</label>
+<select id="cat"><option>Family / Parents</option><option>Friends</option><option>General Public</option></select>
+
+<label for="src">Where did you get information about this event?</label>
+<select id="src"><option>University</option><option>Friends</option><option>Family</option><option>Social Media</option><option value="other">Other</option></select>
+<input id="srcOther" placeholder="Please specify" hidden style="margin-top:8px">
+
+<label>Choose your seats</label>
+<p class="hint">Select as many seats as the number of participants. Greyed-out seats are taken.</p>
+<div class="map">
+  <div class="bar stage">STAGE</div>
+  <div id="rows"></div>
+  <div class="legend"><span><i style="background:#fff"></i>Available</span><span><i style="background:var(--wine)"></i>Your seat</span><span><i style="background:var(--taken)"></i>Taken</span></div>
+</div>
+<p class="picked" id="picked">No seats selected</p>
+
+<p class="msg err" id="err" role="alert"></p>
+<button class="go" id="submit" type="button">Register</button>
+</div>
+</div>
+</main>
+
+<script>
+// 1) Paste your Apps Script Web App URL here (see Code.gs instructions)
+const API_URL = "https://script.google.com/macros/s/AKfycbxvoIciuXcauDcWPGF18XpqLrBRDW3VnPzZ5l11bn6fYx69hHRkWWfW7B0LnPEWwgCj7A/exec";
+
+// 2) Seat layout. Each box in the map is one seat.
+const ROWS = "BCDEFGHIJKL".split("");
+// Seats per block: Left 5, Center 10, Right 5 (seat IDs like B-L1, B-C10, B-R5)
+const BLOCKS = [{k:"L",n:5,name:"Left"},{k:"C",n:10,name:"Center"},{k:"R",n:5,name:"Right"}];
+// Center blocks with no seats (removed)
+const NO_SEATS = ["F-C","G-C","H-C","I-C"];
+
+const $ = id => document.getElementById(id);
+let taken = new Set(), picked = [];
+
+function qty() {
+  return $("qty").value === "other" ? parseInt($("qtyOther").value, 10) || 0 : parseInt($("qty").value, 10);
+}
+
+function buildMap() {
+  const wrap = $("rows");
+  wrap.innerHTML = "";
+  ROWS.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "row";
+    const lab = document.createElement("span");
+    lab.className = "rl"; lab.textContent = r;
+    row.appendChild(lab);
+    BLOCKS.forEach((blk, i) => {
+      const box = document.createElement("div");
+      box.className = "blk";
+      if (!NO_SEATS.includes(r + "-" + blk.k)) {
+        for (let n = 1; n <= blk.n; n++) {
+          const id = r + "-" + blk.k + n;
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "seat";
+          b.textContent = n;
+          b.dataset.id = id;
+          b.setAttribute("aria-label", "Row " + r + ", " + blk.name + ", seat " + n);
+          b.disabled = taken.has(id);
+          b.onclick = () => toggle(id);
+          box.appendChild(b);
+        }
+      }
+      row.appendChild(box);
+      if (i < 2) { const s = document.createElement("span"); s.className = "stairs"; s.title = "Stairs"; row.appendChild(s); }
+    });
+    wrap.appendChild(row);
+  });
+  paint();
+}
+
+function paint() {
+  document.querySelectorAll(".seat").forEach(b => {
+    b.classList.toggle("sel", picked.includes(b.dataset.id));
+    b.disabled = taken.has(b.dataset.id);
+  });
+  $("picked").textContent = picked.length
+    ? "Selected (" + picked.length + "/" + qty() + "): " + picked.join(", ")
+    : "No seats selected";
+}
+
+function toggle(id) {
+  $("err").textContent = "";
+  if (picked.includes(id)) picked = picked.filter(x => x !== id);
+  else if (picked.length >= qty()) { $("err").textContent = "You can only select " + qty() + " seat(s). Change the quantity or unselect a seat."; return; }
+  else picked.push(id);
+  paint();
+}
+
+async function loadTaken() {
+  if (API_URL.startsWith("PASTE")) return;
+  try {
+    const res = await fetch(API_URL + "?action=seats");
+    const data = await res.json();
+    taken = new Set(data.taken || []);
+    picked = picked.filter(s => !taken.has(s));
+    buildMap();
+  } catch (e) { $("err").textContent = "Could not load seat availability. Please refresh the page."; }
+}
+
+$("qty").onchange = () => {
+  $("qtyOther").hidden = $("qty").value !== "other";
+  picked = picked.slice(0, qty()); paint();
+};
+$("qtyOther").oninput = () => { picked = picked.slice(0, qty()); paint(); };
+$("src").onchange = () => { $("srcOther").hidden = $("src").value !== "other"; };
+
+$("submit").onclick = async () => {
+  const err = $("err"); err.textContent = "";
+  const email = $("email").value.trim(), name = $("name").value.trim(), wa = $("wa").value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return err.textContent = "Please enter a valid email address.";
+  if (!name) return err.textContent = "Please enter your full name.";
+  if (!/^[+\d][\d\s-]{7,}$/.test(wa)) return err.textContent = "Please enter a valid WhatsApp number.";
+  if (qty() < 1) return err.textContent = "Please enter the number of participants.";
+  if (picked.length !== qty()) return err.textContent = "Please select exactly " + qty() + " seat(s).";
+  const src = $("src").value === "other" ? ($("srcOther").value.trim() || "Other") : $("src").value;
+  if (API_URL.startsWith("PASTE")) return err.textContent = "Setup needed: add your Apps Script URL in index.html.";
+
+  const btn = $("submit"); btn.disabled = true; btn.textContent = "Registering...";
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ email, name, wa, qty: qty(), category: $("cat").value, source: src, seats: picked })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      $("doneSeats").textContent = picked.join(", ");
+      $("doneEmail").textContent = email;
+      $("formWrap").hidden = true; $("done").hidden = false;
+      window.scrollTo(0, 0);
+    } else {
+      err.textContent = data.error || "Something went wrong. Please try again.";
+      if (data.taken) { data.taken.forEach(s => taken.add(s)); picked = picked.filter(s => !taken.has(s)); paint(); }
+    }
+  } catch (e) { err.textContent = "Could not reach the server. Please try again."; }
+  btn.disabled = false; btn.textContent = "Register";
+};
+
+buildMap();
+loadTaken();
+</script>
+</body>
+</html>
